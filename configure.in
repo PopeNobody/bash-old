@@ -1099,7 +1099,7 @@ case "$srcdir" in
 *)	for d in doc tests support lib examples; do	# dirs
 		test -d $d || mkdir $d
 	done
-	for ld in readline glob tilde malloc sh termcap; do	# libdirs
+	for ld in readline glob tilde malloc sh pwent termcap; do	# libdirs
 		test -d lib/$ld || mkdir lib/$ld
 	done
 	test -d examples/loadables || mkdir examples/loadables	# loadable builtins
@@ -1151,6 +1151,7 @@ AC_SUBST(LOCAL_DEFS)
 #AC_SUBST(ALLOCA_OBJECT)
 
 AC_OUTPUT([Makefile builtins/Makefile lib/readline/Makefile lib/glob/Makefile \
+    lib/pwent/Makefile \
 	  lib/intl/Makefile \
 	  lib/malloc/Makefile lib/sh/Makefile lib/termcap/Makefile \
 	  lib/tilde/Makefile doc/Makefile support/Makefile po/Makefile.in \

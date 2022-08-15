@@ -793,6 +793,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -818,6 +819,7 @@ enable_option_checking
 with_afs
 with_bash_malloc
 with_curses
+with_pwent
 with_gnu_malloc
 with_installed_readline
 enable_minimal_config
@@ -925,6 +927,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1177,6 +1180,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1314,7 +1326,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1467,6 +1479,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1585,6 +1598,7 @@ Optional Packages:
   --with-bash-malloc      use the Bash version of malloc
   --with-curses           use the curses library instead of the termcap
                           library
+  --with-pwent            use the included pwent, useful for static linking
   --with-gnu-malloc       synonym for --with-bash-malloc
   --with-installed-readline
                           use a version of the readline library that is
@@ -2943,6 +2957,12 @@ fi
 # Check whether --with-curses was given.
 if test "${with_curses+set}" = set; then :
   withval=$with_curses; opt_curses=$withval
+fi
+
+
+# Check whether --with-pwent was given.
+if test "${with_pwent+set}" = set; then :
+  withval=$with_pwent; opt_pwent=$withval
 fi
 
 
@@ -4778,7 +4798,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -4824,7 +4844,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -4848,7 +4868,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -4893,7 +4913,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -4917,7 +4937,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -7828,6 +7848,8 @@ main ()
     if (*(data + i) != *(data3 + i))
       return 14;
   close (fd);
+  free (data);
+  free (data3);
   return 0;
 }
 _ACEOF
@@ -15088,6 +15110,8 @@ main ()
     if (*(data + i) != *(data3 + i))
       return 14;
   close (fd);
+  free (data);
+  free (data3);
   return 0;
 }
 _ACEOF
@@ -20485,7 +20509,7 @@ case "$srcdir" in
 *)	for d in doc tests support lib examples; do	# dirs
 		test -d $d || mkdir $d
 	done
-	for ld in readline glob tilde malloc sh termcap; do	# libdirs
+	for ld in readline glob tilde malloc sh pwent termcap; do	# libdirs
 		test -d lib/$ld || mkdir lib/$ld
 	done
 	test -d examples/loadables || mkdir examples/loadables	# loadable builtins
@@ -20546,7 +20570,7 @@ fi
 #AC_SUBST(ALLOCA_SOURCE)
 #AC_SUBST(ALLOCA_OBJECT)
 
-ac_config_files="$ac_config_files Makefile builtins/Makefile lib/readline/Makefile lib/glob/Makefile lib/intl/Makefile lib/malloc/Makefile lib/sh/Makefile lib/termcap/Makefile lib/tilde/Makefile doc/Makefile support/Makefile po/Makefile.in examples/loadables/Makefile examples/loadables/Makefile.inc examples/loadables/perl/Makefile support/bash.pc support/bashbug.sh"
+ac_config_files="$ac_config_files Makefile builtins/Makefile lib/readline/Makefile lib/glob/Makefile lib/intl/Makefile lib/malloc/Makefile lib/sh/Makefile lib/pwent/Makefile lib/termcap/Makefile lib/tilde/Makefile doc/Makefile support/Makefile po/Makefile.in examples/loadables/Makefile examples/loadables/Makefile.inc examples/loadables/perl/Makefile support/bash.pc support/bashbug.sh"
 
 ac_config_commands="$ac_config_commands default"
 
@@ -21265,6 +21289,7 @@ do
     "lib/intl/Makefile") CONFIG_FILES="$CONFIG_FILES lib/intl/Makefile" ;;
     "lib/malloc/Makefile") CONFIG_FILES="$CONFIG_FILES lib/malloc/Makefile" ;;
     "lib/sh/Makefile") CONFIG_FILES="$CONFIG_FILES lib/sh/Makefile" ;;
+    "lib/pwent/Makefile") CONFIG_FILES="$CONFIG_FILES lib/pwent/Makefile" ;;
     "lib/termcap/Makefile") CONFIG_FILES="$CONFIG_FILES lib/termcap/Makefile" ;;
     "lib/tilde/Makefile") CONFIG_FILES="$CONFIG_FILES lib/tilde/Makefile" ;;
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;

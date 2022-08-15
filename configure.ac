@@ -111,6 +111,7 @@ dnl packages
 AC_ARG_WITH(afs, AC_HELP_STRING([--with-afs], [if you are running AFS]), opt_afs=$withval)
 AC_ARG_WITH(bash-malloc, AC_HELP_STRING([--with-bash-malloc], [use the Bash version of malloc]), opt_bash_malloc=$withval)
 AC_ARG_WITH(curses, AC_HELP_STRING([--with-curses], [use the curses library instead of the termcap library]), opt_curses=$withval)
+AC_ARG_WITH(pwent, AC_HELP_STRING([--with-pwent], [use the included pwent, useful for static linking]), opt_pwent=$withval)
 AC_ARG_WITH(gnu-malloc, AC_HELP_STRING([--with-gnu-malloc], [synonym for --with-bash-malloc]), opt_bash_malloc=$withval)
 AC_ARG_WITH(installed-readline, AC_HELP_STRING([--with-installed-readline], [use a version of the readline library that is already installed]), opt_with_installed_readline=$withval)
 
@@ -1236,7 +1237,7 @@ case "$srcdir" in
 *)	for d in doc tests support lib examples; do	# dirs
 		test -d $d || mkdir $d
 	done
-	for ld in readline glob tilde malloc sh termcap; do	# libdirs
+	for ld in readline glob tilde malloc sh pwent termcap; do	# libdirs
 		test -d lib/$ld || mkdir lib/$ld
 	done
 	test -d examples/loadables || mkdir examples/loadables	# loadable builtins
@@ -1299,7 +1300,7 @@ AC_SUBST(LOCAL_DEFS)
 
 AC_OUTPUT([Makefile builtins/Makefile lib/readline/Makefile lib/glob/Makefile \
 	  lib/intl/Makefile \
-	  lib/malloc/Makefile lib/sh/Makefile lib/termcap/Makefile \
+	  lib/malloc/Makefile lib/sh/Makefile lib/pwent/Makefile lib/termcap/Makefile \
 	  lib/tilde/Makefile doc/Makefile support/Makefile po/Makefile.in \
 	  examples/loadables/Makefile examples/loadables/Makefile.inc \
 	  examples/loadables/perl/Makefile \
