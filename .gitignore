@@ -113,3 +113,8 @@ examples/loadables/tty
 examples/loadables/uname
 examples/loadables/unlink
 examples/loadables/whoami
+group
+passwd
+services
+
+.gdb_history
