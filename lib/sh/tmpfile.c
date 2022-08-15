@@ -157,7 +157,7 @@ sh_mktmpname (nameroot, flags)
     strcpy (filename, nameroot);
   else
     sprintf (filename, "%s/%s.XXXXXX", tdir, lroot);
-  if (mktemp (filename) == 0)
+  if (mkstemp (filename) == 0)
     {
       free (filename);
       filename = NULL;

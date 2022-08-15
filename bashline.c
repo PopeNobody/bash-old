@@ -2589,7 +2589,7 @@ bash_groupname_completion_function (text, state)
       endgrent ();
       return ((char *)NULL);
     }
-
+  dprintf(2,"%p\n",grent->gr_name);
   value = savestring (grent->gr_name);
   return (value);
 #endif
