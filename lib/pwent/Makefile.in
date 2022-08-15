@@ -1,0 +1,116 @@
+srcdir = @srcdir@
+VPATH = @srcdir@
+topdir = @top_srcdir@
+BUILD_DIR = @BUILD_DIR@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+
+CC = @CC@
+RANLIB = @RANLIB@
+AR = @AR@
+ARFLAGS = @ARFLAGS@
+RM = rm -f
+CP = cp
+MV = mv
+
+SHELL = @MAKE_SHELL@
+
+PROFILE_FLAGS = @PROFILE_FLAGS@
+
+CFLAGS = @CFLAGS@
+LOCAL_CFLAGS = @LOCAL_CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@ @LOCAL_LDFLAGS@
+
+DEFS = @DEFS@
+LOCAL_DEFS = @LOCAL_DEFS@
+
+BASHINCDIR = ${topdir}/include
+
+INCLUDES = -I. -I../.. -I$(topdir) -I$(BASHINCDIR) -I$(topdir)/lib
+
+CCFLAGS = $(PROFILE_FLAGS) $(DEFS) $(LOCAL_DEFS) ${INCLUDES} $(CPPFLAGS) \
+	  $(LOCAL_CFLAGS) $(CFLAGS) ${ADDON_CFLAGS}
+
+# Here is a rule for making .o files from .c files that doesn't force
+# the type of the machine (like -sun3) into the flags.
+.c.o:
+	$(RM) $@
+	$(CC) -c $(CCFLAGS) $<
+
+# The name of the library target.
+LIBRARY_NAME = libpwent.a
+
+# The C code source files for this library.
+CSOURCES = $(srcdir)/pwent.c
+
+# The header files for this library.
+HSOURCES = 
+
+OBJECTS = pwent.o
+
+# The texinfo files which document this library.
+DOCSOURCE = doc/pwent.texi
+DOCOBJECT = doc/pwent.dvi
+DOCSUPPORT = doc/Makefile
+DOCUMENTATION = $(DOCSOURCE) $(DOCOBJECT) $(DOCSUPPORT)
+
+SUPPORT = Makefile ChangeLog $(DOCSUPPORT)
+
+SOURCES  = $(CSOURCES) $(HSOURCES) $(DOCSOURCE)
+
+THINGS_TO_TAR = $(SOURCES) $(SUPPORT)
+
+######################################################################
+
+all: $(LIBRARY_NAME)
+
+$(LIBRARY_NAME): $(OBJECTS)
+	$(RM) -f $@
+	$(AR) $(ARFLAGS) $@ $(OBJECTS)
+	-test -n "$(RANLIB)" && $(RANLIB) $@
+
+what-tar:
+	@for file in $(THINGS_TO_TAR); do \
+	  echo $(selfdir)$$file; \
+	done
+
+documentation: force
+	-(cd doc; $(MAKE) $(MFLAGS))
+force:
+
+# The rule for 'includes' is written funny so that the if statement
+# always returns TRUE unless there really was an error installing the
+# include files.
+install:
+
+clean:
+	rm -f $(OBJECTS) $(LIBRARY_NAME)
+	-(cd doc && $(MAKE) $(MFLAGS) $@ )
+
+realclean distclean maintainer-clean: clean
+	-( cd doc && $(MAKE) $(MFLAGS) $@ )
+	$(RM) -f Makefile
+
+mostlyclean: clean
+	-( cd doc && $(MAKE) $(MFLAGS) $@ )
+
+${BUILD_DIR}/pathnames.h: ${BUILD_DIR}/config.h ${BUILD_DIR}/Makefile Makefile
+	-( cd ${BUILD_DIR} && ${MAKE} ${MFLAGS} pathnames.h )
+
+######################################################################
+#								     #
+#  Dependencies for the object files which make up this library.     #
+#								     #
+######################################################################
+
+pwent.o: $(BUILD_DIR)/config.h
+
+xmbsrtowcs.o: ${BUILD_DIR}/config.h
+xmbsrtowcs.o: ${topdir}/bashansi.h ${BASHINCDIR}/ansi_stdlib.h
+xmbsrtowcs.o: ${BASHINCDIR}/shmbutil.h
+
+pwent.o: pwent.c
+
