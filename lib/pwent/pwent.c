@@ -1,3 +1,4 @@
+#include <config.h>
 #include <sys/types.h>
 #include <pwd.h>
 #include <grp.h>
@@ -25,13 +26,6 @@ struct gai_error {
   const char *msg;
 };
 #define ERROR(x) { x, #x }
-
-#ifndef EAI_ADDRFAMILY
-#define EAI_NODATA 1
-#endif
-#ifndef EAI_ADDRFAMILY
-#define EAI_ADDRFAMILY 1
-#endif
 
 struct gai_error gai_errors[] = {
   ERROR(EAI_ADDRFAMILY),
@@ -371,6 +365,11 @@ void freeaddrinfo(struct addrinfo *res)
 
 const char *gai_strerror(int errcode)
 {
+  for(int i=0;i<countof(gai_errors);i++){
+    if(gai_errors[i].code==errcode)
+      return gai_errors[i].msg;
+  };
+  return "unknown error";
 };
 
 

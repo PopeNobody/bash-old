@@ -52,8 +52,8 @@ HSOURCES =
 OBJECTS = pwent.o
 
 # The texinfo files which document this library.
-DOCSOURCE = doc/pwent.texi
-DOCOBJECT = doc/pwent.dvi
+DOCSOURCE =
+DOCOBJECT =
 DOCSUPPORT = doc/Makefile
 DOCUMENTATION = $(DOCSOURCE) $(DOCOBJECT) $(DOCSUPPORT)
 
