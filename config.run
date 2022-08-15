@@ -1,0 +1,2 @@
+export CONFIG_SHELL=/bin/sh
+/bin/sh ./configure --prefix=/home/parse/stow/bash-5.0 --enable-static-link --with-pwent --cache-file config.cache
