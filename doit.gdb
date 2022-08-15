@@ -1,3 +1,5 @@
 file bash
+set remote exec-file bash
 target extended-remote localhost:9999
-start
+source breakpoints.gdb
+run

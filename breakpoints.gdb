@@ -1,7 +1,5 @@
 catch throw
 catch throw
-break getpwent
-break getpwnam
-break getpwnam_r
-break getpwuid
-break getpwuid_r
+break setservent
+break getservent
+break /home/parse/src/bash/bash/lib/pwent/pwent.c:420

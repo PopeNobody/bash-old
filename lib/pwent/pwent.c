@@ -12,13 +12,17 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <assert.h>
+#include <ctype.h>
 
-static struct passwd passwds[100];
-static struct group groups[200];
+static struct passwd passwds[1024];
+static struct group groups[1024];
+static struct servent servents[1024];
+
 const size_t BUF_SIZE=1024;
 
 static int pw_pos=-1;
 static int gr_pos=-1;
+static int s_pos=-1;
 
 const static void *mmap_bad=(void*)(unsigned long)-1;
 struct gai_error {
@@ -45,13 +49,115 @@ struct gai_error gai_errors[] = {
 #define countof(x) sizeof(x)/sizeof(x[0])
 static char *next_str(char **pp);
 
+static int count(const char *beg, const char *end, char val){
+  int count=0;
+  while(beg!=end){
+    if(*beg++ == val)
+      ++count;
+  };
+  return count;
+};
+static char **service_lines(char * const beg, char * const end){
+  int nlines = count(beg,end,'\n');
+  char **lines = (char**)malloc(sizeof(char*)*(nlines+2));
+  memset(lines,0,sizeof(lines));
+  int line=0;
+  char *pos=beg;
+  while(pos!=end) {
+    if(pos!=end)
+      lines[line++]=pos;
+    while(pos!=end && *pos!='\n') {
+      if(*pos=='#')
+        *pos=0;
+      pos++;
+    }
+    if(pos!=end)
+      *pos++=0;
+  };
+  while(line<=nlines)
+    lines[line++]=0;
+  int d=0;
+  for(int i=0;i<nlines;i++){
+    if(lines[i][0])
+      lines[d++]=lines[i];
+  }
+  while(lines[d])
+    lines[d++]=0;
+  return lines;
+}
+char dummy[1]={0};
+char *pdummy=&dummy[0];
 
+static char**split_words(char *beg, char *end){
+  static char*words[1024];
+  memset(&words,0,sizeof(words));
+  int word=0;
+  while(beg!=end) {
+    while(beg!=end && isspace(*beg))
+      beg++;
+    if(beg==end)
+      break;
+    words[word++]=beg;
+    while(beg!=end && !isspace(*beg))
+      beg++;
+    if(beg!=end)
+      *beg++=0;
+  };
+  words[word++]=0;
+  return words;
+}
+static int count_words(char **words){
+  int count=0;
+  while(words[count++])
+    ;
+  return count;
+};
+static struct servent parse_servent(char * const beg){
+  assert(*beg);
+  char * const end = beg+strlen(beg);
+  assert(!*end);
+  char *pos=beg;
+  while(pos!=end && isspace(*pos))
+    pos++;
+  struct servent servent;
+  memset(&servent,0,sizeof(servent));
+  char **words=split_words(beg,end);
+  if(*words)
+   servent.s_name=*words++;
+  if(*words)
+   servent.s_proto=*words++;
+  servent.s_port=atoi(servent.s_proto);
+  while(*servent.s_proto && *servent.s_proto!='/')
+    servent.s_proto++;
+  if(*servent.s_proto)
+    servent.s_proto++;
+
+  int count=count_words(words);
+  servent.s_aliases = malloc(sizeof(char*)+sizeof(char*)*count);
+  for(int i=0;i<count;i++){
+    servent.s_aliases[i]=words[i];
+  };
+  words[count]=0;
+  return servent;
+};
 struct group *getgrnam(const char *name) {
-  return 0;
+  static struct group group;
+  static char buf[16*1024];
+  static struct group *result;
+  int res = getgrnam_r(name, &group, buf,sizeof(buf), &result);
+  if(res)
+    return 0;
+  return result;
 };
 
 struct group *getgrgid(gid_t gid) {
-  return 0;
+  static struct group group;
+  static char buf[16*1024];
+  static struct group *result;
+  int res = getgrgid_r(gid, &group, buf,sizeof(buf), &result);
+  if(res)
+    return 0;
+  return result;
 };
 
 int getgrnam_r(const char *name, struct group *grp,
@@ -70,10 +176,11 @@ int getgrgid_r(gid_t gid, struct group *grp,
 struct group *getgrent(void) {
   if(gr_pos<0)
     setgrent();    
-  if(groups[gr_pos].gr_name==0)
+  if(groups[gr_pos].gr_name==0) {
+    endgrent();
     return 0;
-  else
-    return groups+gr_pos++;
+  }
+  return groups+gr_pos++;
 };
 void finish_group(struct group *group){
   char *p=group->gr_name;
@@ -101,14 +208,16 @@ void finish_group(struct group *group){
 };
 void setgrent(void){
   static volatile int busy=0;
-  while(busy)
+  while(busy) {
+    dprintf(2,"waiting in setgrent");
     sleep(1);
+  };
   busy=1;
   assert(busy);
   if(!groups[0].gr_name){
     memset(groups,0,sizeof(groups));
 
-    int fd=open("/etc/group",O_RDONLY);
+    int fd=open("group",O_RDONLY);
     if(fd<0)
       goto done;
     size_t size=lseek(fd,0,SEEK_END);
@@ -140,11 +249,6 @@ void setgrent(void){
       ++i;
     };
     groups[0]=group_0;
-    for(int i=0;i<countof(groups);i++){
-      if(groups[i].gr_name==0)
-        break;
-      dprintf(2,"name: %s\n", groups[i].gr_name);
-    };
   }
   endgrent();
 done:
@@ -170,25 +274,21 @@ static char *next_str(char **pp){
 
 struct passwd *getpwuid(uid_t uid) {
   static struct passwd passwd;
-  char buf[16*1024];
+  static char buf[16*1024];
   static struct passwd *result;
   int res = getpwuid_r(uid, &passwd, buf,sizeof(buf), &result);
-  if(res || !result) {
+  if(res)
     return 0;
-  } else {
-    return result;
-  };
+  return result;
 };
 struct passwd *getpwnam(const char *name) {
   static struct passwd passwd;
-  char buf[16*1024];
+  static char buf[16*1024];
   static struct passwd *result;
   int res = getpwnam_r(name, &passwd, buf,sizeof(buf), &result);
-  if(res || !result) {
+  if(res)
     return 0;
-  } else {
-    return result;
-  };
+  return result;
 };
 
 size_t min(size_t lhs, size_t rhs){
@@ -264,14 +364,16 @@ static void finish_passwd(struct passwd *pwd)
 void setpwent()
 {
   static volatile int busy=0;
-  while(busy)
+  while(busy) {
+    dprintf(2,"waiting in setpwent");
     sleep(1);
+  };
   busy=1;
   assert(busy);
   if(!passwds[0].pw_name){
     memset(passwds,0,sizeof(passwds));
 
-    int fd=open("/etc/passwd",O_RDONLY);
+    int fd=open("passwd",O_RDONLY);
     if(fd<0)
       goto done;
     size_t size=lseek(fd,0,SEEK_END);
@@ -303,11 +405,6 @@ void setpwent()
       ++i;
     };
     passwds[0]=passwd_0;
-    for(int i=0;i<100;i++){
-      if(passwds[i].pw_name==0)
-        break;
-      dprintf(2,"name: %s\n", passwds[i].pw_name);
-    };
   }
   endpwent();
 done:
@@ -322,24 +419,89 @@ void endpwent(void)
 struct passwd *getpwent(void) {
   if(pw_pos<0)
     setpwent();    
-  if(passwds[pw_pos].pw_name==0)
+  if(passwds[pw_pos].pw_name==0) {
+    endpwent();
     return 0;
-  else
-    return passwds+pw_pos++;
+  }
+  return passwds+pw_pos++;
 };
 
 
 
 struct servent *getservent(void)
 {
+  if(s_pos<0)
+    setservent(1);
+  if(servents[s_pos].s_name)
+    return servents+s_pos++;
   return 0;
+};
+static void finish_servent(struct servent *ent){
+  char *p=ent->s_name;
+  int count=0;
+  int space=0;
+  while(*p && *p!='#') {
+    if(isspace(*p)) {
+      if(!space)
+        count++;
+      space=1;
+      *p=0;
+    } else {
+      space=0;
+    };
+    p++;
+  };
+  char *e=p;
+  *p=0;
 };
 void setservent(int stayopen)
 {
+  static volatile int busy=0;
+  while(busy) {
+    dprintf(2,"waiting in setservent");
+    sleep(1);
+  };
+  busy=1;
+  assert(busy);
+  if(!servents[0].s_name){
+    memset(servents,0,sizeof(servents));
+
+    int fd=open("services",O_RDONLY);
+    if(fd<0)
+      goto done;
+    size_t size=lseek(fd,0,SEEK_END);
+    char * const b =mmap(0,size,PROT_READ|PROT_WRITE,MAP_PRIVATE,fd,0);
+    close(fd);
+    if(mmap_bad==b)
+      goto done;
+    char *e=b+size;
+    *(char*)e=0;
+    assert(strlen(b)==size);
+    struct servent servent_0;
+    struct servent servent;
+    memset(&servent,0,sizeof(servent));
+    memset(&servent_0,0,sizeof(servent_0));
+    if(1){
+      char **lines=service_lines(b,e);
+      for(int i=0;lines[i];i++) {
+        servent=parse_servent(lines[i]);
+        if(i){
+          servents[i]=servent;
+        } else {
+          servent_0=servent;
+        }
+      } 
+    }
+    servents[0]=servent_0;
+  }
+  endservent();
+done:
+  busy=0;
 };
 
 void endservent(void)
 {
+  s_pos=0;
 };
 
 struct servent *getservbyname(const char *name, const char *proto)
@@ -371,6 +533,24 @@ const char *gai_strerror(int errcode)
   };
   return "unknown error";
 };
-
+#ifdef WITHMAIN
+static void dump_servent(struct servent *servent)
+{
+  dprintf(1,"%s %d %s", servent->s_name, servent->s_port, servent->s_proto);
+  char **aliases=servent->s_aliases;
+  for(int i=0;aliases[i];i++)
+    dprintf(1," %s", aliases[i]);
+  dprintf(1,"\n");
+};
+int main(int argc, char**argv){
+  setservent(0);
+  struct servent *ent = getservent();
+  while(ent){
+    dump_servent(ent);
+    ent=getservent();
+  };
+  return 0;
+};
+#endif
 
 

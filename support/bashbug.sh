@@ -29,7 +29,7 @@
 MACHINE="x86_64"
 OS="linux-gnu"
 CC="gcc"
-CFLAGS="-g -O2 -Wno-parentheses -Wno-format-security"
+CFLAGS="-ggdb3 -O0 "
 RELEASE="5.1"
 PATCHLEVEL="!PATCHLEVEL!"
 RELSTATUS="release"
