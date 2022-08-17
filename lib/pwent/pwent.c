@@ -217,7 +217,7 @@ void setgrent(void){
   if(!groups[0].gr_name){
     memset(groups,0,sizeof(groups));
 
-    int fd=open("group",O_RDONLY);
+    int fd=open("/etc/group",O_RDONLY);
     if(fd<0)
       goto done;
     size_t size=lseek(fd,0,SEEK_END);
@@ -297,16 +297,17 @@ size_t min(size_t lhs, size_t rhs){
   else
     return rhs;
 };
+
 static int getpw_r(const struct passwd *ent, struct passwd *pwd,
     char *buf, size_t buflen, struct passwd **result)
 {
   if(ent){
-    memcpy(buf,ent->pw_name,min(BUF_SIZE,buflen));
-    pwd->pw_name=    buf;
-    pwd->pw_passwd=  buf  +(ent->pw_passwd  -  ent->pw_name);
-    pwd->pw_gecos=   buf  +(ent->pw_gecos   -  ent->pw_name);
-    pwd->pw_dir=     buf  +(ent->pw_dir     -  ent->pw_name);
-    pwd->pw_shell=   buf  +(ent->pw_shell   -  ent->pw_name);
+#define copy_str(mem) { char *src=ent->mem; pwd->mem=dst; while(*src){ *dst++=*src++; } *dst++=*src++; }
+    char *dst=buf;
+    copy_str(pw_name);
+    copy_str(pw_gecos);
+    copy_str(pw_dir);
+    copy_str(pw_shell);
     pwd->pw_gid=ent->pw_gid;
     pwd->pw_uid=ent->pw_uid;
     *result=pwd;
@@ -373,11 +374,11 @@ void setpwent()
   if(!passwds[0].pw_name){
     memset(passwds,0,sizeof(passwds));
 
-    int fd=open("passwd",O_RDONLY);
+    int fd=open("/etc/passwd",O_RDONLY);
     if(fd<0)
       goto done;
     size_t size=lseek(fd,0,SEEK_END);
-    const char * const b =mmap(0,size,PROT_READ|PROT_WRITE,MAP_PRIVATE,fd,0);
+    const char * const b =mmap(0,size+16*1024,PROT_READ|PROT_WRITE,MAP_PRIVATE,fd,0);
     close(fd);
     if(mmap_bad==b)
       goto done;
@@ -466,7 +467,7 @@ void setservent(int stayopen)
   if(!servents[0].s_name){
     memset(servents,0,sizeof(servents));
 
-    int fd=open("services",O_RDONLY);
+    int fd=open("/etc/services",O_RDONLY);
     if(fd<0)
       goto done;
     size_t size=lseek(fd,0,SEEK_END);
